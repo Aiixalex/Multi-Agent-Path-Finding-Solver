@@ -17,6 +17,7 @@ class PrioritizedPlanningSolver(object):
         self.num_of_agents = len(goals)
 
         self.CPU_time = 0
+        self.MAX_PATH_STEPS = 100
 
         # compute heuristics for the low-level search
         self.heuristics = []
@@ -29,11 +30,21 @@ class PrioritizedPlanningSolver(object):
         start_time = timer.time()
         result = []
         constraints = []
+        # 1.2
+        # constraints.append({'agent': 0, 'loc': (1, 5), 'time_step': 4})
+        # 1.3
+        # constraints.append({'agent': 1, 'loc': [(1, 2), (1, 3)], 'time_step': 1})
+        # 1.4
+        # constraints.append({'agent': 0, 'loc': (1, 5), 'time_step': 10})
+        # 1.5
+        # constraints.append({'agent': 1, 'loc': (1, 3), 'time_step': 2})
+        # constraints.append({'agent': 1, 'loc': (1, 4), 'time_step': 2})
+        # constraints.append({'agent': 1, 'loc': (1, 2), 'time_step': 2})
 
         for i in range(self.num_of_agents):  # Find path for each agent
             path = a_star(self.my_map, self.starts[i], self.goals[i], self.heuristics[i],
                           i, constraints)
-            if path is None:
+            if path is None or len(path) > self.MAX_PATH_STEPS:
                 raise BaseException('No solutions')
             result.append(path)
 
@@ -43,8 +54,16 @@ class PrioritizedPlanningSolver(object):
             #            * path contains the solution path of the current (i'th) agent, e.g., [(1,1),(1,2),(1,3)]
             #            * self.num_of_agents has the number of total agents
             #            * constraints: array of constraints to consider for future A* searches
+            for j in range(len(path)):
+                for k in range(i+1, self.num_of_agents):
+                    constraints.append({'agent': k, 'loc': [path[j]], 'time_step': j})
 
+                    if j != len(path) - 1:
+                        constraints.append({'agent': k, 'loc': [path[j + 1], path[j]], 'time_step': j+1})
 
+            for t in range(len(path), self.MAX_PATH_STEPS):
+                for k in range(i+1, self.num_of_agents):
+                    constraints.append({'agent': k, 'loc': [path[-1]], 'time_step': t})
             ##############################
 
         self.CPU_time = timer.time() - start_time
